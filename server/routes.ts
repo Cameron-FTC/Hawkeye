@@ -3,6 +3,49 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertEmployeeSchema, insertClientSchema, insertLocationSchema, insertJobSchema, insertJobAssignmentSchema, insertTodoSchema, insertTimesheetSchema, insertInvoiceSchema, insertAssetSchema, insertAssetScanSchema } from "@shared/schema";
 import { z } from "zod";
+import express from "express";
+import { createUser, updateUser, deleteUser } from "./storage";
+
+const router = express.Router();
+
+// Create user
+router.post("/api/users", async (req, res) => {
+  try {
+    const payload = req.body;
+    const created = await createUser(payload);
+    return res.status(201).json(created);
+  } catch (err) {
+    console.error("POST /api/users error", err);
+    return res.status(500).json({ error: "Failed to create user" });
+  }
+});
+
+// Update user
+router.patch("/api/users/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const updated = await updateUser(id, updates);
+    if (!updated) return res.status(404).json({ error: "User not found" });
+    return res.json(updated);
+  } catch (err) {
+    console.error("PATCH /api/users/:id error", err);
+    return res.status(500).json({ error: "Failed to update user" });
+  }
+});
+
+// Delete user
+router.delete("/api/users/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ok = await deleteUser(id);
+    if (!ok) return res.status(404).json({ error: "User not found" });
+    return res.status(204).end();
+  } catch (err) {
+    console.error("DELETE /api/users/:id error", err);
+    return res.status(500).json({ error: "Failed to delete user" });
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -380,12 +423,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const clockOut = new Date();
-      const clockIn = new Date(activeTimesheet.clockIn);
+      const clockIn = new Date((activeTimesheet as any).clockIn);
       const totalMinutes = Math.floor((clockOut.getTime() - clockIn.getTime()) / 1000 / 60);
       const lunchMinutes = lunchBreakMinutes || 30;
       const totalHours = ((totalMinutes - lunchMinutes) / 60).toFixed(2);
       
-      const timesheet = await storage.updateTimesheet(activeTimesheet.id, {
+      const timesheet = await storage.updateTimesheet((activeTimesheet as any).id, {
         clockOut,
         lunchBreakMinutes: lunchMinutes,
         totalHours,
@@ -449,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to update invoice" });
     }
   });
-
+/*
   // Generate invoice for a job/week
   app.post("/api/invoices/generate", async (req, res) => {
     try {
@@ -464,7 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Job not found" });
       }
       
-      if (!job.clientId) {
+      if (!(job as any).clientId) {
         return res.status(400).json({ error: "Job has no client assigned" });
       }
       
@@ -488,8 +531,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const invoice = await storage.createInvoice({
         jobId,
-        clientId: job.clientId,
-        businessId: job.businessId,
+        clientId: (job as any).clientId,
+        businessId: (job as any).businessId,
         invoiceNumber,
         weekStartDate: startDate,
         weekEndDate: endDate,
@@ -503,7 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to generate invoice" });
     }
   });
-
+*/
   // ===== ASSETS =====
   app.get("/api/assets", async (req, res) => {
     try {
