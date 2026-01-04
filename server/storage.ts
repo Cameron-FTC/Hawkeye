@@ -30,6 +30,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<Array<Record<string, any>>>;
   
   getBusiness(id: string): Promise<Business | undefined>;
   getAllBusinesses(): Promise<Business[]>;
@@ -462,6 +463,40 @@ export class DbStorage implements IStorage {
     const res = await col.insertOne(doc as any);
     if (!doc.id) doc.id = res.insertedId.toString();
     return doc as AssetScan;
+  }
+
+  async getAllUsers(): Promise<Array<Record<string, any>>> {
+    // Combine employees and clients into a single user-like list for the admin UI
+    const businesses = await this.getAllBusinesses();
+    const users: Array<Record<string, any>> = [];
+
+    for (const b of businesses) {
+      const employees = await this.col<any>("employees").find({ businessId: b.id }).toArray();
+      for (const e of employees) {
+        users.push({
+          id: e.id,
+          name: e.name,
+          email: e.email,
+          phone: e.phone,
+          role: e.role || "employee",
+          businessName: b.name,
+        });
+      }
+
+      const clients = await this.col<any>("clients").find({ businessId: b.id }).toArray();
+      for (const c of clients) {
+        users.push({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          role: "client",
+          businessName: b.name,
+        });
+      }
+    }
+
+    return users;
   }
 }
 

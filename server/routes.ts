@@ -568,6 +568,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== USERS (aggregated from employees & clients) =====
+  app.get("/api/users", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
   app.patch("/api/assets/:id", async (req, res) => {
     try {
       const asset = await storage.updateAsset(req.params.id, req.body);

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -29,47 +29,25 @@ export default function AdminDashboard() {
       role: "employee" | "manager" | "client" | "admin";
       businessName: string;
     }>
-  >([
-    {
-      id: "1",
-      name: "John Smith",
-      email: "john.smith@acme.com",
-      phone: "+1 (555) 123-4567",
-      role: "employee",
-      businessName: "Acme Construction Co.",
-    },
-    {
-      id: "2",
-      name: "Sarah Manager",
-      email: "sarah.m@acme.com",
-      phone: "+1 (555) 234-5678",
-      role: "manager",
-      businessName: "Acme Construction Co.",
-    },
-    {
-      id: "3",
-      name: "Mike Client",
-      email: "mike.c@clientco.com",
-      role: "client",
-      businessName: "Client Corporation",
-    },
-    {
-      id: "4",
-      name: "Emma Wilson",
-      email: "emma.w@acme.com",
-      phone: "+1 (555) 345-6789",
-      role: "employee",
-      businessName: "Acme Construction Co.",
-    },
-    {
-      id: "5",
-      name: "David Admin",
-      email: "david.a@acme.com",
-      phone: "+1 (555) 456-7890",
-      role: "admin",
-      businessName: "Acme Construction Co.",
-    },
-  ]);
+  >([]);
+
+  // fetch users from server (aggregated from employees & clients)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/users");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (mounted) setUsers(data);
+      } catch (e) {
+        console.error("Failed to fetch users", e);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
