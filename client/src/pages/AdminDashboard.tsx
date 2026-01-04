@@ -154,13 +154,24 @@ export default function AdminDashboard() {
       <AddEmployeeDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        onSubmit={(employee) => {
-          const newUser = {
-            id: String(users.length + 1),
-            ...employee,
-          };
-          setUsers([...users, newUser]);
-          console.log("New user added:", newUser);
+        onSubmit={async (employee) => {
+          try {
+            const res = await fetch("/api/users", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(employee),
+            });
+            if (!res.ok) {
+              const text = await res.text();
+              console.error("Create user failed:", res.status, text);
+              return;
+            }
+            const created = await res.json();
+            setUsers((prev) => [created, ...prev]);
+            setAddDialogOpen(false);
+          } catch (err) {
+            console.error("Create user error:", err);
+          }
         }}
       />
     </div>
