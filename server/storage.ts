@@ -65,11 +65,37 @@ export async function deleteUser(id: string) {
   return !!(r2.deletedCount && r2.deletedCount > 0);
 }
 
+// get all users (employees and clients)
+export async function getAllUsers() {
+  const db = await getDb();
+  const employees = await db.collection("employees").find().toArray();
+  const clients = await db.collection("clients").find().toArray();
+
+  const normalize = (doc: any, source: "employee" | "client") => ({
+    id: doc._id?.toString?.() ?? doc.id ?? null,
+    name: doc.name ?? null,
+    email: doc.email ?? null,
+    phone: doc.phone ?? null,
+    role: doc.role ?? (source === "client" ? "client" : "employee"),
+    businessId: doc.businessId ?? null,
+    businessName: doc.businessName ?? null,
+    createdAt: doc.createdAt ?? null,
+  });
+
+  return [
+    ...employees.map((e) => normalize(e, "employee")),
+    ...clients.map((c) => normalize(c, "client")),
+  ];
+}
+
 export const storage = {
   // existing user helpers
   createUser,
   updateUser,
   deleteUser,
+
+  // implemented helper
+  getAllUsers,
 
   // stubs for other storage methods referenced by routes.ts
   // implement these as needed in this file or replace with real implementations
@@ -120,8 +146,6 @@ export const storage = {
   getAssetByQRCode: async (..._args: any[]) => { throw new Error("getAssetByQRCode not implemented"); },
   createAsset: async (..._args: any[]) => { throw new Error("createAsset not implemented"); },
   updateAsset: async (..._args: any[]) => { throw new Error("updateAsset not implemented"); },
-
-  getAllUsers: async (..._args: any[]) => { throw new Error("getAllUsers not implemented"); },
 
   getAssetScansByAsset: async (..._args: any[]) => { throw new Error("getAssetScansByAsset not implemented"); },
   getAssetScansByEmployee: async (..._args: any[]) => { throw new Error("getAssetScansByEmployee not implemented"); },
