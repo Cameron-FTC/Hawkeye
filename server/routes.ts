@@ -11,12 +11,19 @@ const router = express.Router();
 // Create user
 router.post("/api/users", async (req, res) => {
   try {
+    console.log("POST /api/users body:", req.body);
     const payload = req.body;
+    if (!payload || !payload.name || !payload.email || !payload.role) {
+      return res.status(400).json({ error: "Missing required fields: name, email, role" });
+    }
     const created = await createUser(payload);
     return res.status(201).json(created);
-  } catch (err) {
-    console.error("POST /api/users error", err);
-    return res.status(500).json({ error: "Failed to create user" });
+  } catch (err: any) {
+    console.error("POST /api/users error:", err);
+    return res.status(500).json({
+      error: err?.message || "Failed to create user",
+      ...(process.env.NODE_ENV !== "production" ? { stack: err?.stack } : {}),
+    });
   }
 });
 
@@ -681,3 +688,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   return httpServer;
 }
+
+export default router;
