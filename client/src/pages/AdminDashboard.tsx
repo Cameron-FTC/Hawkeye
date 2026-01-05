@@ -37,7 +37,11 @@ export default function AdminDashboard() {
     (async () => {
       try {
         const res = await fetch("/api/users");
-        if (!res.ok) return;
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("/api/users fetch failed:", res.status, text);
+          return;
+        }
         const data = await res.json();
         if (mounted) setUsers(data);
       } catch (e) {
